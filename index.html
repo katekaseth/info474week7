@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Assignment Week 7</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <script src='neighborhoods.js'></script>
+    <script src='points.js'></script>
+</head>
+
+<body>
+    <script>
+        const msm = {
+            width: 700,
+            height: 500
+        }
+
+        let svg = d3.select('body')
+            .append('svg')
+            .attr('width', msm.width)
+            .attr('height', msm.height)
+
+        let neighborhoods = svg.append('g')
+
+        let albersProjection = d3.geoAlbers()
+            .scale(190000)
+            .rotate([71.057, 0])
+            .center([0, 42.313])
+            .translate([msm.width / 2, msm.height / 2]);
+
+        let geoPath = d3.geoPath()
+            .projection(albersProjection);
+
+        // draw map
+        neighborhoods.selectAll('path')
+            .data(neighborhood_json.features)
+            .enter()
+            .append('path')
+            .attr('fill', '#ccc')
+            .attr('d', geoPath);
+
+        // draw the points
+        svg.append('g')
+            .selectAll('path')
+            .data(points_json.features)
+            .enter()
+            .append('path')
+            .attr('fill', 'black')
+            .attr('d', geoPath);
+
+
+        // process the json data into projected coordinate of points
+        data = [];
+        for (let i = 0; i < points_json.features.length; i++) {
+            data.push({
+                x: albersProjection(points_json.features[i].geometry.coordinates)[0],
+                y: albersProjection(points_json.features[i].geometry.coordinates)[1]
+            })
+        }
+
+        // line function
+        let line = d3.line()
+            .x(function (d) {
+                return d.x;
+            })
+            .y(function (d) {
+                return d.y;
+            })
+
+        let path = svg.append("path")
+            .attr("d", line(data))
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", "2")
+            .attr("fill", "none");
+
+        let totalLength = path.node().getTotalLength();
+        
+        // animate path
+        path
+            .attr("stroke-dasharray", totalLength + " " + totalLength)
+            .attr("stroke-dashoffset", totalLength)
+            .transition()
+            .duration(3000)
+            .attr("stroke-dashoffset", 0);
+    </script>
+</body>
+</html>
